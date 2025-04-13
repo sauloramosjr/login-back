@@ -18,10 +18,10 @@ export class AuthService {
     if (!user) {
       throw new HttpException(
         {
-          status: HttpStatus.NOT_FOUND,
-          error: 'Nenhum usuario com este email!',
+          status: HttpStatus.UNAUTHORIZED,
+          message: 'Credênciais inválidas!',
         },
-        HttpStatus.NOT_FOUND,
+        HttpStatus.UNAUTHORIZED,
       );
     }
     if (await compare(userPassword, user.password)) {
@@ -31,7 +31,7 @@ export class AuthService {
     throw new HttpException(
       {
         status: HttpStatus.UNAUTHORIZED,
-        error: 'Senha incorreta!',
+        message: 'Senha incorreta!',
       },
       HttpStatus.UNAUTHORIZED,
     );
