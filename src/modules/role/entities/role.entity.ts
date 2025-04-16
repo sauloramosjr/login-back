@@ -6,7 +6,7 @@ import { UsuarioSistemaRole } from 'src/modules/usuario-sistema-role/entities/us
 export class Role extends Model<InferAttributes<Role>, InferCreationAttributes<Role>> {
 
   @Column
-  nome: string; // ex: admin, editor, viewer
+  nome: string; 
 
   @HasMany(() => UsuarioSistemaRole)
   usuarioSistemaRoles: UsuarioSistemaRole[];

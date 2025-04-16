@@ -9,17 +9,18 @@ import { UsuarioSistemaRole } from '../usuario-sistema-role/entities/usuario-sis
 
 @Injectable()
 export class UsuariosService {
-  constructor(@InjectModel(Usuario) private _entity: typeof Usuario,
-  @InjectModel(UsuarioSistemaRole)
-private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
-) {}
+  constructor(
+    @InjectModel(Usuario) private _entity: typeof Usuario,
+    @InjectModel(UsuarioSistemaRole)
+    private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
+  ) {}
 
   async create(createUsuarioDto: CreateUsuarioDto) {
     const usuarioJaExiste = await this._entity.findOne({
       where: { email: createUsuarioDto.email },
       raw: true,
     });
-  
+
     if (usuarioJaExiste) {
       throw new HttpException(
         {
@@ -29,44 +30,42 @@ private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
         HttpStatus.CONFLICT,
       );
     }
-  
-    // Criptografa a senha
+
     const senhaCriptografada = await hash(createUsuarioDto.password, 10);
     createUsuarioDto.password = senhaCriptografada;
-  
-    // Cria o usuário
+
     const usuario = await this._entity.create(
       createUsuarioDto as CreationAttributes<Usuario>,
     );
 
-    const { id } = usuario.dataValues
-    let acessosCriados:UsuarioSistemaRole[] = [];
-  // Cria os acessos, se forem informados
-  if (createUsuarioDto.acessos?.length) {
-    acessosCriados = await Promise.all(
-      createUsuarioDto.acessos.map((element) =>
-        this.usuarioSistemaRoleModel.create({
-          usuarioId: Number(id),
-          sistemaId: Number(element.sistemaId),
-          roleId: Number(element.roleId),
-        } as CreationAttributes<UsuarioSistemaRole>).then(e=>{
-          const {roleId,sistemaId} = e.dataValues;
-          return {roleId,sistemaId} as UsuarioSistemaRole
-        })
-      )
-    );
-  }
-  
+    const { id } = usuario.dataValues;
+    let acessosCriados: UsuarioSistemaRole[] = [];
+    if (createUsuarioDto.acessos?.length) {
+      acessosCriados = await Promise.all(
+        createUsuarioDto.acessos.map((element) =>
+          this.usuarioSistemaRoleModel
+            .create({
+              usuarioId: Number(id),
+              sistemaId: Number(element.sistemaId),
+              roleId: Number(element.roleId),
+            } as CreationAttributes<UsuarioSistemaRole>)
+            .then((e) => {
+              const { roleId, sistemaId } = e.dataValues;
+              return { roleId, sistemaId } as UsuarioSistemaRole;
+            }),
+        ),
+      );
+    }
+
     const { dataValues } = usuario;
     const { password, updatedAt, createdAt, ..._user } = dataValues;
-  
-    return {..._user,acessos: acessosCriados};
+
+    return { ..._user, acessos: acessosCriados };
   }
-  
 
   async findAll() {
     const users = await this._entity.findAll({
-      raw:true
+      raw: true,
     });
     if (users.length > 0) {
       return users.map((user) => {
@@ -89,10 +88,9 @@ private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
       where: {
         id: id,
       },
-      raw:true
+      raw: true,
     });
     if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ..._user } = user;
       return _user;
     }
@@ -107,10 +105,10 @@ private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
 
   async update(id: number, updateUsuarioDto: UpdateUsuarioDto) {
     await this.findOne(id);
-    if(!!updateUsuarioDto.password){
+    if (!!updateUsuarioDto.password) {
       updateUsuarioDto.password = await hash(updateUsuarioDto.password, 10);
     }
-    const {acessos,...rest }= updateUsuarioDto
+    const { acessos, ...rest } = updateUsuarioDto;
     return this._entity.update(rest, { where: { id } });
   }
 
@@ -124,7 +122,7 @@ private usuarioSistemaRoleModel: typeof UsuarioSistemaRole,
       where: {
         email: email,
       },
-      raw:true
+      raw: true,
     });
     if (user) {
       return user;
